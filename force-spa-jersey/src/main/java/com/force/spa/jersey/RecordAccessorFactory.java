@@ -5,13 +5,15 @@
  */
 package com.force.spa.jersey;
 
+import org.apache.commons.lang3.Validate;
+
 import com.force.spa.ApiVersion;
 import com.force.spa.AuthorizationConnector;
+import com.force.spa.FieldLevelSecurityFilter;
 import com.force.spa.RecordAccessor;
 import com.force.spa.RecordAccessorConfig;
 import com.force.spa.core.rest.RestRecordAccessor;
 import com.sun.jersey.api.client.Client;
-import org.apache.commons.lang3.Validate;
 
 /**
  * A simple (non-Spring) factory for instances of {@link RecordAccessor} that use a {@link JerseyRestConnector} for
@@ -34,8 +36,8 @@ public class RecordAccessorFactory {
      * @return a RecordAccessor
      * @see PasswordAuthorizationConnector
      */
-    public RecordAccessor newInstance(RecordAccessorConfig config) {
-        return newInstance(config, getDefaultAuthorizationConnector());
+    public RecordAccessor newInstance(RecordAccessorConfig config, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
+        return newInstance(config, getDefaultAuthorizationConnector(), fieldLevelSecurityFilter);
     }
 
     /**
@@ -49,8 +51,8 @@ public class RecordAccessorFactory {
      * @param authorizationConnector an authorization connector
      * @return a RecordAccessor
      */
-    public RecordAccessor newInstance(RecordAccessorConfig config, AuthorizationConnector authorizationConnector) {
-        return newInstance(config, authorizationConnector, clientFactory.newInstance(authorizationConnector), null);
+    public RecordAccessor newInstance(RecordAccessorConfig config, AuthorizationConnector authorizationConnector, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
+        return newInstance(config, authorizationConnector, clientFactory.newInstance(authorizationConnector), null, fieldLevelSecurityFilter);
     }
 
     /**
@@ -65,12 +67,13 @@ public class RecordAccessorFactory {
      * @param apiVersion             the desired Salesforce API version
      * @return a RecordAccessor
      */
-    public RecordAccessor newInstance(RecordAccessorConfig config, AuthorizationConnector authorizationConnector, Client client, ApiVersion apiVersion) {
+    public RecordAccessor newInstance(RecordAccessorConfig config, AuthorizationConnector authorizationConnector, Client client, 
+            ApiVersion apiVersion, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
         Validate.notNull(config, "config must not be null");
         Validate.notNull(authorizationConnector, "authorizationConnector must not be null");
         Validate.notNull(client, "client must not be null");
 
-        return new RestRecordAccessor(config, new JerseyRestConnector(authorizationConnector, client, apiVersion));
+        return new RestRecordAccessor(config, new JerseyRestConnector(authorizationConnector, client, apiVersion), fieldLevelSecurityFilter);
     }
 
     private AuthorizationConnector getDefaultAuthorizationConnector() {

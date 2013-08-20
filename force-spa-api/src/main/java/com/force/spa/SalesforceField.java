@@ -33,4 +33,9 @@ public @interface SalesforceField {
      * Whether the member's value should be persisted during "update" or "patch".
      */
     boolean updatable() default true;
+    
+    /**
+     * Whether the field is enabled for field level security
+     * */
+    boolean fieldLevelSecurityEnabled() default false;
 }

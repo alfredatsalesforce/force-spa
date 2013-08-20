@@ -5,9 +5,12 @@
  */
 package com.force.spa.core.rest;
 
+import java.util.List;
+
 import com.force.spa.ApiVersion;
 import com.force.spa.CreateRecordOperation;
 import com.force.spa.DeleteRecordOperation;
+import com.force.spa.FieldLevelSecurityFilter;
 import com.force.spa.GetRecordOperation;
 import com.force.spa.PatchRecordOperation;
 import com.force.spa.QueryRecordsOperation;
@@ -16,8 +19,6 @@ import com.force.spa.RecordOperation;
 import com.force.spa.RestConnector;
 import com.force.spa.UpdateRecordOperation;
 import com.force.spa.core.AbstractRecordAccessor;
-
-import java.util.List;
 
 /**
  * An implementation of {@link com.force.spa.RecordAccessor} that is based on the JSON representations of the Salesforce
@@ -28,10 +29,12 @@ public final class RestRecordAccessor extends AbstractRecordAccessor {
     private static final ApiVersion MINIMUM_VERSION_FOR_BATCHING = new ApiVersion(29, 0);
 
     private final RestConnector connector;
+    private final FieldLevelSecurityFilter fieldLevelSecurityFilter;
 
-    public RestRecordAccessor(RecordAccessorConfig config, RestConnector connector) {
+    public RestRecordAccessor(RecordAccessorConfig config, RestConnector connector, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
         super(config);
         this.connector = connector;
+        this.fieldLevelSecurityFilter = fieldLevelSecurityFilter;
     }
 
     @Override
@@ -69,7 +72,7 @@ public final class RestRecordAccessor extends AbstractRecordAccessor {
 
     @Override
     public <T> GetRecordOperation<T> newGetRecordOperation(String id, Class<T> recordClass) {
-        return new RestGetRecordOperation<T>(id, recordClass);
+        return new RestGetRecordOperation<T>(id, recordClass, fieldLevelSecurityFilter);
     }
 
     @Override
@@ -79,12 +82,12 @@ public final class RestRecordAccessor extends AbstractRecordAccessor {
 
     @Override
     public <T> QueryRecordsOperation<T> newQueryRecordsOperation(String soql, Class<T> recordClass) {
-        return new RestQueryRecordsOperation<T>(soql, recordClass);
+        return new RestQueryRecordsOperation<T>(soql, recordClass, fieldLevelSecurityFilter);
     }
 
     @Override
     public <T> QueryRecordsOperation<T> newQueryRecordsOperation(String soql, Class<?> recordClass, Class<T> resultClass) {
-        return new RestQueryRecordsOperation<T>(soql, recordClass, resultClass);
+        return new RestQueryRecordsOperation<T>(soql, recordClass, resultClass, fieldLevelSecurityFilter);
     }
 
     @Override

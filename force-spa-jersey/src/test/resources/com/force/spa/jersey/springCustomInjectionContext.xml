@@ -13,5 +13,6 @@
 
     <!-- Using same bean id to override default detected by component scan -->
     <bean id="authorizationConnector" class="com.force.spa.jersey.CustomAuthorizationConnector"/>
+    <bean id="fieldLevelSecurityFilter" class="com.force.spa.jersey.CustomFieldLevelSecurityFilter"/>    
 
 </beans>

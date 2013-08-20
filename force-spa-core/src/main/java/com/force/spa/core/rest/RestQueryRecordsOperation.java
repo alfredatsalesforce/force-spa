@@ -6,16 +6,19 @@
 package com.force.spa.core.rest;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.force.spa.FieldLevelSecurityFilter;
 import com.force.spa.QueryRecordsOperation;
 import com.force.spa.RecordResponseException;
 import com.force.spa.RestConnector;
 import com.force.spa.core.ObjectDescriptor;
 import com.force.spa.core.ObjectMappingContext;
 import com.force.spa.core.SoqlBuilder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.ws.Holder;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +29,11 @@ final class RestQueryRecordsOperation<T> extends AbstractRestRecordOperation<Lis
     private final String soqlTemplate;
     private final Class<?> recordClass;
     private final Class<T> resultClass;
+    private final FieldLevelSecurityFilter fieldLevelSecurityFilter;
     private int startPosition;
     private int maxResults;
 
-    public RestQueryRecordsOperation(String soqlTemplate, Class<?> recordClass, Class<T> resultClass) {
+    public RestQueryRecordsOperation(String soqlTemplate, Class<?> recordClass, Class<T> resultClass, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
         if (soqlTemplate == null)
             throw new IllegalArgumentException("soqlTemplate must not be null");
         if (recordClass == null)
@@ -40,12 +44,13 @@ final class RestQueryRecordsOperation<T> extends AbstractRestRecordOperation<Lis
         this.soqlTemplate = soqlTemplate;
         this.resultClass = resultClass;
         this.recordClass = recordClass;
+        this.fieldLevelSecurityFilter = fieldLevelSecurityFilter;
         this.startPosition = 0;
         this.maxResults = 0;
     }
 
-    public RestQueryRecordsOperation(String soql, Class<T> recordClass) {
-        this(soql, recordClass, recordClass);
+    public RestQueryRecordsOperation(String soql, Class<T> recordClass, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
+        this(soql, recordClass, recordClass, fieldLevelSecurityFilter);
     }
 
     @Override
@@ -87,7 +92,7 @@ final class RestQueryRecordsOperation<T> extends AbstractRestRecordOperation<Lis
     public void start(final RestConnector connector, final ObjectMappingContext mappingContext) {
         final ObjectDescriptor descriptor = mappingContext.getRequiredObjectDescriptor(recordClass);
 
-        String soql = new SoqlBuilder(descriptor).soqlTemplate(soqlTemplate).offset(startPosition).limit(maxResults).build();
+        String soql = new SoqlBuilder(descriptor, fieldLevelSecurityFilter).soqlTemplate(soqlTemplate).offset(startPosition).limit(maxResults).build();
         URI uri = URI.create("/query?q=" + encodeParameter(soql));
 
         if (log.isDebugEnabled())

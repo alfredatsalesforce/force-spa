@@ -5,16 +5,18 @@
  */
 package com.force.spa.jersey;
 
-import com.force.spa.AuthorizationConnector;
-import com.force.spa.AuthorizationException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import javax.servlet.http.HttpServletRequest;
-import java.net.URI;
-import java.net.URISyntaxException;
+import com.force.spa.AuthorizationConnector;
+import com.force.spa.AuthorizationException;
 
 /**
  * An implementation of {@link AuthorizationConnector} which looks for the authorization information and instance
@@ -44,7 +46,7 @@ public class SpringHeaderAuthorizationConnector implements AuthorizationConnecto
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
         if (requestAttributes == null) {
             throw new IllegalStateException(
-                "No Spring RequestAttributes are available. There's probably no active Spring web request");
+                    "No Spring RequestAttributes are available. There's probably no active Spring web request");
         }
         if (!(requestAttributes instanceof ServletRequestAttributes)) {
             throw new IllegalStateException("Spring RequestAttributes are not of type ServletRequestAttributes");
@@ -85,4 +87,5 @@ public class SpringHeaderAuthorizationConnector implements AuthorizationConnecto
             throw new AuthorizationException("Missing Force-Instance-Url header");
         }
     }
+
 }

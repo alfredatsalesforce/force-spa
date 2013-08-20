@@ -5,14 +5,16 @@
  */
 package com.force.spa.jersey;
 
-import com.force.spa.ApiVersion;
-import com.force.spa.AuthorizationConnector;
-import com.force.spa.RecordAccessor;
-import com.force.spa.RecordAccessorConfig;
-import com.sun.jersey.api.client.Client;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.force.spa.ApiVersion;
+import com.force.spa.AuthorizationConnector;
+import com.force.spa.FieldLevelSecurityFilter;
+import com.force.spa.RecordAccessor;
+import com.force.spa.RecordAccessorConfig;
+import com.sun.jersey.api.client.Client;
 
 /**
  * A Spring factory for instances of {@link RecordAccessor} that use a {@link JerseyRestConnector} for communications.
@@ -27,6 +29,9 @@ public class SpringRecordAccessorFactory implements FactoryBean<RecordAccessor> 
 
     @Autowired
     private AuthorizationConnector authorizationConnector;
+    
+    @Autowired
+    private FieldLevelSecurityFilter fieldLevelSecurityFilter;
 
     @Autowired(required = false)
     private RecordAccessorConfig config = new RecordAccessorConfig();
@@ -51,7 +56,7 @@ public class SpringRecordAccessorFactory implements FactoryBean<RecordAccessor> 
 
     @Override
     public RecordAccessor getObject() {
-        return internalFactory.newInstance(config, authorizationConnector, client, apiVersion);
+        return internalFactory.newInstance(config, authorizationConnector, client, apiVersion, fieldLevelSecurityFilter);
     }
 
     @Override

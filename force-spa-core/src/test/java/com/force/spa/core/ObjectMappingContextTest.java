@@ -5,20 +5,6 @@
  */
 package com.force.spa.core;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.force.spa.core.testbeans.CustomBean;
-import com.force.spa.core.testbeans.EnumBean;
-import com.force.spa.core.testbeans.EnumWithAbstractMethod;
-import com.force.spa.core.testbeans.ExplicitlyNamedBean;
-import com.force.spa.core.testbeans.NoGetterBean;
-import com.force.spa.core.testbeans.NoSetterBean;
-import com.force.spa.core.testbeans.RecursiveBean;
-import com.force.spa.core.testbeans.SimpleBean;
-import com.force.spa.core.testbeans.SimpleContainerBean;
-import com.force.spa.core.testbeans.TransientFieldBean;
-import com.force.spa.core.testbeans.UnannotatedBean;
-import org.junit.Test;
-
 import static com.force.spa.core.HasFieldName.hasFieldName;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -27,6 +13,22 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+
+import org.junit.Test;
+
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.force.spa.core.testbeans.CustomBean;
+import com.force.spa.core.testbeans.EnumBean;
+import com.force.spa.core.testbeans.EnumWithAbstractMethod;
+import com.force.spa.core.testbeans.ExplicitlyNamedBean;
+import com.force.spa.core.testbeans.FieldLevelSecurityEnabledBean;
+import com.force.spa.core.testbeans.NoGetterBean;
+import com.force.spa.core.testbeans.NoSetterBean;
+import com.force.spa.core.testbeans.RecursiveBean;
+import com.force.spa.core.testbeans.SimpleBean;
+import com.force.spa.core.testbeans.SimpleContainerBean;
+import com.force.spa.core.testbeans.TransientFieldBean;
+import com.force.spa.core.testbeans.UnannotatedBean;
 
 @SuppressWarnings("unchecked")
 public class ObjectMappingContextTest {
@@ -206,5 +208,30 @@ public class ObjectMappingContextTest {
             containsInAnyOrder(
                 hasFieldName("Id"),
                 hasFieldName("attributes")));
+    }
+    
+    @Test
+    public void testFieldLevelSecurityEnabledBean() {
+        ObjectDescriptor descriptor = mappingContext.getObjectDescriptor(FieldLevelSecurityEnabledBean.class);
+        assertThat(descriptor, is(not(nullValue())));
+        assertThat(descriptor.getName(), is(equalTo("FieldLevelSecurityEnabledBean")));
+        assertThat(
+            descriptor.getFields(),
+            containsInAnyOrder(
+                hasFieldName("Id"),
+                hasFieldName("aField"),
+                hasFieldName("attributes")));
+        assertThat(descriptor.hasFieldLevelSecurityEnabledField(), is(true));
+        
+        FieldDescriptor field = descriptor.getField("aField");
+        assertThat(field, is(not(nullValue())));
+        assertThat(field.isFieldLevelSecurityEnabled(), is(true));
+    }
+    
+    @Test
+    public void testFieldLevelSecurityDisabledBean() {
+        ObjectDescriptor descriptor = mappingContext.getObjectDescriptor(SimpleBean.class);
+        assertThat(descriptor, is(not(nullValue())));
+        assertThat(descriptor.hasFieldLevelSecurityEnabledField(), is(false));
     }
 }

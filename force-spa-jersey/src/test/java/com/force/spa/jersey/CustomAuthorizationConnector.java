@@ -5,9 +5,9 @@
  */
 package com.force.spa.jersey;
 
-import com.force.spa.AuthorizationConnector;
-
 import java.net.URI;
+
+import com.force.spa.AuthorizationConnector;
 
 public class CustomAuthorizationConnector implements AuthorizationConnector {
     @Override
@@ -19,4 +19,5 @@ public class CustomAuthorizationConnector implements AuthorizationConnector {
     public URI getInstanceUrl() {
         return URI.create("http://localhost:1999");
     }
+
 }

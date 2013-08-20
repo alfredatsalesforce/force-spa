@@ -6,14 +6,15 @@
 package com.force.spa.core;
 
 
-import com.force.spa.ObjectDefinitionException;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.force.spa.ObjectDefinitionException;
 
 /**
  * Extra metadata about a Salesforce Object above and beyond that normally managed by Jackson. The information is
@@ -30,6 +31,7 @@ public final class ObjectDescriptor implements Serializable {
     private final String name;
     private List<FieldDescriptor> fields;
     private final Map<String, FieldDescriptor> fieldsByName;
+    private boolean hasFieldLevelSecurityEnabledField;
 
     ObjectDescriptor(String name) {
         this.name = name;
@@ -43,6 +45,7 @@ public final class ObjectDescriptor implements Serializable {
 
             for (FieldDescriptor field : fields) {
                 fieldsByName.put(field.getName(), field);
+                hasFieldLevelSecurityEnabledField = hasFieldLevelSecurityEnabledField || field.isFieldLevelSecurityEnabled();
             }
         } else {
             throw new IllegalStateException("Fields have already been initialized");
@@ -69,6 +72,10 @@ public final class ObjectDescriptor implements Serializable {
 
     public boolean hasIdField() {
         return hasField(ID_FIELD_NAME);
+    }
+    
+    public boolean hasFieldLevelSecurityEnabledField() {
+        return hasFieldLevelSecurityEnabledField;
     }
 
     public FieldDescriptor getField(String name) {

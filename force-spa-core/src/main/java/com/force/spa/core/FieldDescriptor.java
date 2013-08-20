@@ -5,12 +5,14 @@
  */
 package com.force.spa.core;
 
-import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
+import com.force.spa.SalesforceField;
 
 /**
  * Extra metadata about a Salesforce Field above and beyond that normally managed by Jackson. The information is
@@ -26,6 +28,7 @@ public final class FieldDescriptor implements Serializable {
     private final AnnotatedMember accessor;
     private final ObjectDescriptor relatedObject;
     private final List<ObjectDescriptor> polymorphicChoices;
+    private final boolean fieldLevelSecurityEnabled;
 
     FieldDescriptor(String name, AnnotatedMember accessor, Class<?> type, ObjectDescriptor relatedObject, List<ObjectDescriptor> polymorphicChoices) {
         this.name = name;
@@ -33,6 +36,8 @@ public final class FieldDescriptor implements Serializable {
         this.type = type;
         this.relatedObject = relatedObject;
         this.polymorphicChoices = polymorphicChoices;
+        SalesforceField annotation = accessor.getAnnotation(SalesforceField.class);
+        this.fieldLevelSecurityEnabled = annotation != null && annotation.fieldLevelSecurityEnabled();
     }
 
     public String getName() {
@@ -66,6 +71,10 @@ public final class FieldDescriptor implements Serializable {
     @SuppressWarnings("unchecked")
     public <T> T getValue(Object record) {
         return (T) accessor.getValue(record);
+    }
+    
+    public boolean isFieldLevelSecurityEnabled() {
+        return fieldLevelSecurityEnabled;
     }
 
     @Override

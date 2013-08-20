@@ -5,18 +5,20 @@
  */
 package com.force.spa.core;
 
-import com.force.spa.RecordAccessor;
-import com.force.spa.RecordAccessorConfig;
-import com.force.spa.RestConnector;
-import com.force.spa.core.rest.RestRecordAccessor;
-import org.apache.commons.io.IOUtils;
-import org.junit.Before;
+import static org.mockito.Mockito.mock;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.mockito.Mockito.mock;
+import org.apache.commons.io.IOUtils;
+import org.junit.Before;
+
+import com.force.spa.FieldLevelSecurityFilter;
+import com.force.spa.RecordAccessor;
+import com.force.spa.RecordAccessorConfig;
+import com.force.spa.RestConnector;
+import com.force.spa.core.rest.RestRecordAccessor;
 
 /**
  * An abstract base class that includes a small amount of supporting infrastructure to help with unit tests related to a
@@ -32,11 +34,13 @@ public abstract class AbstractRestRecordAccessorTest {
 
     protected RecordAccessor accessor;
     protected TestRestConnector mockConnector;
+    protected FieldLevelSecurityFilter mockFieldLevelSecurityFilter;
 
     @Before
     public void initializeMockEntityManager() {
         mockConnector = mock(TestRestConnector.class);
-        accessor = new RestRecordAccessor(new RecordAccessorConfig(), mockConnector);
+        mockFieldLevelSecurityFilter = mock(FieldLevelSecurityFilter.class);
+        accessor = new RestRecordAccessor(new RecordAccessorConfig(), mockConnector, mockFieldLevelSecurityFilter);
     }
 
     /**
