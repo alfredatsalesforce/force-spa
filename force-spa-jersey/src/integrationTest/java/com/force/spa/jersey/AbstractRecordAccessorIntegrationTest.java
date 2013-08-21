@@ -56,11 +56,6 @@ public class AbstractRecordAccessorIntegrationTest {
         public Permission getFieldLevelSecurityPermissions(String fieldName) {
             return null;
         }
-
-        @Override
-        public String getRequesterId() {
-            return null;
-        }
         
     }
 }

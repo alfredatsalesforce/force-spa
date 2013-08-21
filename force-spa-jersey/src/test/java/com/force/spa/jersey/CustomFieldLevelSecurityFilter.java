@@ -9,9 +9,4 @@ public class CustomFieldLevelSecurityFilter implements FieldLevelSecurityFilter 
         return new Permission(true, false);
     }
 
-    @Override
-    public String getRequesterId() {
-        return null;
-    }
-
 }

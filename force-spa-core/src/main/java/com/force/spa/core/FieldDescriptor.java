@@ -37,7 +37,7 @@ public final class FieldDescriptor implements Serializable {
         this.relatedObject = relatedObject;
         this.polymorphicChoices = polymorphicChoices;
         SalesforceField annotation = accessor.getAnnotation(SalesforceField.class);
-        this.fieldLevelSecurityEnabled = annotation != null && annotation.fieldLevelSecurityEnabled();
+        this.fieldLevelSecurityEnabled = annotation != null && annotation.fieldLevelSecurity();
     }
 
     public String getName() {

@@ -7,7 +7,7 @@ import com.force.spa.record.Record;
 @SalesforceObject
 public class FieldLevelSecurityEnabledBean extends Record {
 
-    @SalesforceField(name = "aField", fieldLevelSecurityEnabled = true)
+    @SalesforceField(name = "aField", fieldLevelSecurity = true)
     private String aField;
 
     public String getaField() {

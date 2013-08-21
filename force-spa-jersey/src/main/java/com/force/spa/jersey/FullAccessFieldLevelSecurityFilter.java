@@ -15,9 +15,4 @@ public class FullAccessFieldLevelSecurityFilter implements FieldLevelSecurityFil
         return new Permission(true, true);
     }
 
-    @Override
-    public String getRequesterId() {
-        return null;
-    }
-
 }

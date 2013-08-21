@@ -37,5 +37,5 @@ public @interface SalesforceField {
     /**
      * Whether the field is enabled for field level security
      * */
-    boolean fieldLevelSecurityEnabled() default false;
+    boolean fieldLevelSecurity() default false;
 }

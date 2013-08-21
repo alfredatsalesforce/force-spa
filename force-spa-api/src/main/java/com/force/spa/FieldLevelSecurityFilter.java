@@ -3,7 +3,6 @@ package com.force.spa;
 public interface FieldLevelSecurityFilter {
 
     Permission getFieldLevelSecurityPermissions(String fieldName);
-    String getRequesterId();
     
     static class Permission {
         private final boolean permissionRead;

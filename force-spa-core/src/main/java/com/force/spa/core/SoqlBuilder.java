@@ -97,7 +97,7 @@ public final class SoqlBuilder {
         while (wildcardMatcher.find()) {
             builder.append(partToScanForWildcards.substring(lastEnd, wildcardMatcher.start()));
             String prefix = wildcardMatcher.group(1);
-            builder.append(expandObject(rootObject, prefix, depth, fieldLevelSecurityFilter));
+            builder.append(expandObject(rootObject, prefix, depth));
             lastEnd = wildcardMatcher.end();
         }
         builder.append(partToScanForWildcards.substring(lastEnd));
@@ -105,32 +105,37 @@ public final class SoqlBuilder {
         return builder;
     }
 
-    private static String expandObject(ObjectDescriptor object, String prefix, int remainingDepth, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
-        CacheKey cacheKey = new CacheKey(object, prefix, fieldLevelSecurityFilter.getRequesterId());       //TODO depth matters too
-        String expansion = cachedExpansions.get(cacheKey);
-        if (expansion != null)
-            return expansion;
+    private String expandObject(ObjectDescriptor object, String prefix, int remainingDepth) {
+        String expansion = null;
+        CacheKey cacheKey = new CacheKey(object, prefix);       //TODO depth matters too
+        boolean isExpansionsCacheCandidate = !object.hasFieldLevelSecurityEnabledField();
+        if (isExpansionsCacheCandidate) {
+            expansion = cachedExpansions.get(cacheKey);
+            if (expansion != null)
+                return expansion;
+        }
 
         if (remainingDepth >= 0) {
             List<String> accumulator = new ArrayList<String>();
             for (FieldDescriptor field : object.getFields()) {
-                if (!(object.hasAttributesField() && field.equals(object.getAttributesField())) && 
-                        hasReadPermission(object, fieldLevelSecurityFilter, field)) {
-                    String expandedField = expandField(field, prefix, remainingDepth, fieldLevelSecurityFilter);
+                if (!(object.hasAttributesField() && field.equals(object.getAttributesField())) && hasReadPermission(field)) {
+                    String expandedField = expandField(field, prefix, remainingDepth);
                     if (expandedField != null) {
                         accumulator.add(expandedField);
                     }
                 }
             }
             expansion = StringUtils.join(accumulator, ",");
-            cachedExpansions.put(cacheKey, expansion);
+            if (isExpansionsCacheCandidate) {
+                cachedExpansions.put(cacheKey, expansion);
+            }
         }
 
         return expansion;
     }
-    
-    private static boolean hasReadPermission(ObjectDescriptor object, FieldLevelSecurityFilter fieldLevelSecurityFilter, FieldDescriptor field) {
-        if (object.hasFieldLevelSecurityEnabledField() && field.isFieldLevelSecurityEnabled()) {
+
+    private boolean hasReadPermission(FieldDescriptor field) {
+        if (field.isFieldLevelSecurityEnabled()) {
             FieldLevelSecurityFilter.Permission permission = fieldLevelSecurityFilter.getFieldLevelSecurityPermissions(field.getName());
             return permission != null && permission.isPermissionRead();
         } else {
@@ -138,9 +143,9 @@ public final class SoqlBuilder {
         }
     }
 
-    private static String expandField(FieldDescriptor field, String prefix, int remainingDepth, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
+    private String expandField(FieldDescriptor field, String prefix, int remainingDepth) {
         if (field.isRelationship()) {
-            return expandRelationshipField(field, prefix, remainingDepth, fieldLevelSecurityFilter);
+            return expandRelationshipField(field, prefix, remainingDepth);
         } else {
             return expandSimpleField(field, prefix);
         }
@@ -150,48 +155,46 @@ public final class SoqlBuilder {
         return StringUtils.isEmpty(prefix) ? field.getName() : prefix + "." + field.getName();
     }
 
-    private static String expandRelationshipField(FieldDescriptor field, String prefix, int remainingDepth, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
+    private String expandRelationshipField(FieldDescriptor field, String prefix, int remainingDepth) {
         if (field.isPolymorphic()) {
-            return expandPolymorphicField(field, prefix, remainingDepth, fieldLevelSecurityFilter);
+            return expandPolymorphicField(field, prefix, remainingDepth);
         } else if (field.isArrayOrCollection()) {
-            return expandCollectionField(field, prefix, remainingDepth, fieldLevelSecurityFilter);
+            return expandCollectionField(field, prefix, remainingDepth);
         } else {
-            return expandObject(field.getRelatedObject(), expandSimpleField(field, prefix), remainingDepth - 1, fieldLevelSecurityFilter);
+            return expandObject(field.getRelatedObject(), expandSimpleField(field, prefix), remainingDepth - 1);
         }
     }
 
-    private static String expandPolymorphicField(FieldDescriptor field, String prefix, int remainingDepth, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
+    private String expandPolymorphicField(FieldDescriptor field, String prefix, int remainingDepth) {
         StringBuilder builder = new StringBuilder();
         builder.append("TYPEOF ").append(expandSimpleField(field, prefix));
         for (ObjectDescriptor object : field.getPolymorphicChoices()) {
             builder.append(" WHEN ").append(object.getName()).append(" THEN ");
-            builder.append(expandObject(object, null, remainingDepth - 1, fieldLevelSecurityFilter));
+            builder.append(expandObject(object, null, remainingDepth - 1));
         }
         if (field.getRelatedObject() != null) {
             builder.append(" ELSE ");
-            builder.append(expandObject(field.getRelatedObject(), null, remainingDepth - 1, fieldLevelSecurityFilter));
+            builder.append(expandObject(field.getRelatedObject(), null, remainingDepth - 1));
         }
         builder.append(" END");
 
         return builder.toString();
     }
 
-    private static String expandCollectionField(FieldDescriptor field, String prefix, int remainingDepth, FieldLevelSecurityFilter fieldLevelSecurityFilter) {
+    private String expandCollectionField(FieldDescriptor field, String prefix, int remainingDepth) {
         return new SoqlBuilder(field.getRelatedObject(), fieldLevelSecurityFilter)
-            .soqlTemplate("(SELECT * from " + expandSimpleField(field, prefix) + ")")
-            .depth(remainingDepth - 1)
-            .build();
+        .soqlTemplate("(SELECT * from " + expandSimpleField(field, prefix) + ")")
+        .depth(remainingDepth - 1)
+        .build();
     }
 
     private static final class CacheKey {
         private final ObjectDescriptor descriptor;
         private final String prefix;
-        private final String requesterId;
 
-        CacheKey(ObjectDescriptor descriptor, String prefix, String requesterId) {
+        CacheKey(ObjectDescriptor descriptor, String prefix) {
             this.descriptor = descriptor;
             this.prefix = prefix;
-            this.requesterId = requesterId;
         }
 
         @Override
@@ -204,8 +207,6 @@ public final class SoqlBuilder {
             if (descriptor != null ? !descriptor.equals(cacheKey.descriptor) : cacheKey.descriptor != null)
                 return false;
             if (prefix != null ? !prefix.equals(cacheKey.prefix) : cacheKey.prefix != null) return false;
-            if (requesterId != null ? !requesterId.equals(cacheKey.requesterId) : cacheKey.requesterId != null)
-                return false;
 
             return true;
         }
@@ -214,7 +215,6 @@ public final class SoqlBuilder {
         public int hashCode() {
             int result = descriptor != null ? descriptor.hashCode() : 0;
             result = 31 * result + (prefix != null ? prefix.hashCode() : 0);
-            result = 31 * result + (requesterId != null ? requesterId.hashCode() : 0);
             return result;
         }
     }
